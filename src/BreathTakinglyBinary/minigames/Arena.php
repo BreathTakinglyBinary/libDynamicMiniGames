@@ -13,7 +13,7 @@ use pocketmine\scheduler\TaskHandler;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use RuntimeException;
-use xenialdan\apibossbar\DiverseBossBar;
+use BreathTakinglyBinary\DynamicBossBar\DiverseBossBar;
 use BreathTakinglyBinary\minigames\event\UpdateSignsEvent;
 use BreathTakinglyBinary\minigames\event\WinEvent;
 use BreathTakinglyBinary\minigames\gamerule\BoolGameRule;
