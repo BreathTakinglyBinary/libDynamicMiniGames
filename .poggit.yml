@@ -2,7 +2,7 @@
 branches:
   - master
 projects:
-  DynamicMiniGames:
+  libDynamicMiniGames:
     path: ""
     model: virion
     type: library
