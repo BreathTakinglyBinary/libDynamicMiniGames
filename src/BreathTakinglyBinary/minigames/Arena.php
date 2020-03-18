@@ -2,6 +2,7 @@
 
 namespace BreathTakinglyBinary\minigames;
 
+use BreathTakinglyBinary\minigames\task\ArenaResetTask;
 use InvalidArgumentException;
 use pocketmine\entity\Attribute;
 use pocketmine\level\Level;
@@ -415,28 +416,7 @@ class Arena{
             }
             //TODO test - removed that line so the world does reset for 1 player games (i.e. on forcestart)
             #if ($this->getState() === self::INGAME && count($this->getPlayers()) === 0) $this->setState(self::IDLE);
-            if($this->getState() === self::INGAME) $this->getOwningGame()->getScheduler()->scheduleDelayedTask(new class($this) extends Task{
-                /** @var Arena */
-                private $arena;
-
-                /**
-                 * @param Arena $arena
-                 */
-                public function __construct(Arena $arena){
-                    $this->arena = $arena;
-                }
-
-                /**
-                 * Actions to execute when run
-                 *
-                 * @param int $currentTick
-                 *
-                 * @return void
-                 */
-                public function onRun(int $currentTick){
-                    API::resetArena($this->arena);
-                }
-            }, 5 * 20);
+            if($this->getState() === self::INGAME) $this->getOwningGame()->getScheduler()->scheduleDelayedTask(new ArenaResetTask($this), 5 * 20);
         }
     }
 
