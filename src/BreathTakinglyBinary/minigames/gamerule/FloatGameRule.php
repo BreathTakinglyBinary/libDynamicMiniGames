@@ -4,7 +4,8 @@
 namespace BreathTakinglyBinary\minigames\gamerule;
 
 
-class FloatGameRule extends GameRule//Not used yet{
+//Not used yet
+class FloatGameRule extends GameRule{
     /** @var float */
     public $value;
 
