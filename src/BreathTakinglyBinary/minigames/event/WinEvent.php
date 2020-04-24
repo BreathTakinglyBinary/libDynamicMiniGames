@@ -2,28 +2,27 @@
 
 namespace BreathTakinglyBinary\minigames\event;
 
-use pocketmine\event\plugin\PluginEvent;
+use BreathTakinglyBinary\minigames\Arena;
+use BreathTakinglyBinary\minigames\Game;
+use BreathTakinglyBinary\minigames\Team;
 use pocketmine\Player;
-use pocketmine\plugin\Plugin;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
-use BreathTakinglyBinary\minigames\API;
-use BreathTakinglyBinary\minigames\Arena;
-use BreathTakinglyBinary\minigames\Team;
 
-class WinEvent extends PluginEvent{
-    public static $handlerList = null;
+class WinEvent extends GameEvent{
+
     /** @var Arena */
     private $arena;
     private $winner;
 
     /**
      * TeamWinEvent constructor.
-     * @param Plugin      $plugin
+     *
+     * @param Game        $plugin
      * @param Arena       $arena
      * @param Team|Player $winner
      */
-    public function __construct(Plugin $plugin, Arena $arena, $winner){
+    public function __construct(Game $plugin, Arena $arena, $winner){
         parent::__construct($plugin);
         $this->arena = $arena;
         $this->winner = $winner;
@@ -33,10 +32,6 @@ class WinEvent extends PluginEvent{
         $prefix = $this->winner instanceof Player ? "Player " : "Team ";
         Server::getInstance()->broadcastTitle(TextFormat::GREEN . $prefix . $this->winner->getName(), TextFormat::GREEN . ' has won the game ' . $this->arena->getOwningGame()->getPrefix() . '!', -1, -1, -1, $this->getInitialPlayers());
         Server::getInstance()->broadcastMessage(TextFormat::GREEN . $prefix . $this->winner->getName() . TextFormat::GREEN . ' has won the game ' . $this->arena->getOwningGame()->getPrefix() . '!', $this->getInitialPlayers());
-    }
-
-    public function getGame(){
-        return API::getGame($this->getPlugin()->getName());
     }
 
     /**
@@ -57,6 +52,7 @@ class WinEvent extends PluginEvent{
         foreach($teams as $team){
             $originals = array_merge($originals, $team->getInitialPlayers());
         }
+
         return array_filter($originals, function($player) : bool{
             return $player instanceof Player && $player->isOnline();
         });
