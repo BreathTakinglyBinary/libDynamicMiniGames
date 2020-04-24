@@ -53,7 +53,6 @@ class ArenaAsyncCopyTask extends AsyncTask{
             if($arena instanceof Arena){
                 Server::getInstance()->getLogger()->notice('Arena ' . $this->levelname . ' successfully reloaded!');
                 $arena->setLevel($level);
-                var_dump("Is Level", $arena->getLevel() instanceof Level);
                 $arena->setState(Arena::IDLE);
                 $game->addArena($arena);
             }

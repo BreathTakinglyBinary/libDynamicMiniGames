@@ -14,16 +14,13 @@ use pocketmine\Server;
 use pocketmine\utils\Color;
 use pocketmine\utils\TextFormat;
 use RuntimeException;
-use BreathTakinglyBinary\minigames\commands\GamesCommand;
-use BreathTakinglyBinary\minigames\commands\GameStatusCommand;
 use BreathTakinglyBinary\minigames\event\DefaultSettingsListener;
-use BreathTakinglyBinary\minigames\event\RegisterGameEvent;
 use BreathTakinglyBinary\minigames\event\StopGameEvent;
 use BreathTakinglyBinary\minigames\task\ArenaAsyncCopyTask;
 
 class API{
-    /** @var Game[] */
-    private static $games;
+    /** @var Game */
+    private static $game;
     /** @var GeneratorGameVoid */
     public static $generator;
 
@@ -55,55 +52,33 @@ class API{
             }
         }
         sort($worldNames);
+
         return $worldNames;
     }
 
     /**
-     * Stops ALL games using the API
-     * Whatever the plugin is, only plugins that are games and "react" to the event are using the StopGameEvent
-     * @throws \ReflectionException
-     */
-    public static function stopAll(){
-        $server = Server::getInstance();
-        foreach($server->getPluginManager()->getPlugins() as $game){
-            self::stop($game);
-        }
-        DefaultSettingsListener::unregister();
-        $server->broadcastMessage(TextFormat::GREEN . "Stopped all games.");
-    }
-
-    /**
-     * Stops a game using the API
-     * Whatever the plugin is, only plugins that are games and "react" to the event are using the StopGameEvent
+     * Stops the registered game using the API
+     *
      * @param Game|string $plugin a plugin or plugin name
+     *
      * @return bool
      * @throws \ReflectionException
      */
-    public static function stop($plugin){
+    public static function stop(){
+        if(!self::$game instanceof Game){
+            throw new RuntimeException("API::stop called when no game was registered.");
+        }
         $server = Server::getInstance();
-        if(is_string($plugin)){
-            $plugin = $server->getPluginManager()->getPlugin($plugin);
-        }
-        if(!$plugin instanceof Game){
-            $server->broadcastMessage(TextFormat::RED . "There is no such plugin/minigame");
-            return false;
-        }
-        $ev = new StopGameEvent($plugin);
+        $ev = new StopGameEvent(self::$game);
         $ev->call();
-        foreach($plugin->getArenas() as $arena){
+        foreach(self::$game->getArenas() as $arena){
             $arena->stopArena();
         }
-        if(DefaultSettingsListener::getRegistrant() === $plugin){
+        if(DefaultSettingsListener::getRegistrant() === self::$game){
             DefaultSettingsListener::unregister();
-            /** @var Game|Plugin $otherGame */
-            foreach(self::getGames() as $otherGame){
-                if(!is_null($otherGame) && $otherGame->isEnabled()){
-                    if(!DefaultSettingsListener::isRegistered())
-                        DefaultSettingsListener::register($otherGame);
-                }
-            }
         }
         $server->broadcastMessage(TextFormat::GREEN . "Stopped " . ($ev->getName() ?? "nameless game"));
+
         return true;
     }
 
@@ -158,66 +133,74 @@ class API{
 
         // Clean up
         $dir->close();
+
         return true;
     }
 
     /** Gets the team a player is in
+     *
      * @param Player $player
+     *
      * @return null|Team
      */
     public static function getTeamOfPlayer(Player $player) : ?Team{
         $arena = self::getArenaOfPlayer($player);
         if(is_null($arena)) return null;
+
         return $arena->getTeamByPlayer($player);
     }
 
     /** Gets the team a player is in
+     *
      * @param Game   $game
      * @param Level  $level
      * @param string $color
+     *
      * @return null|Team
      */
     public static function getTeamByColor(Game $game, Level $level, string $color) : ?Team{
-        $arena = self::getArenaByLevel($game, $level);
+        $arena = self::getArenaByLevel($level);
         if(is_null($arena)) return null;
+
         return $arena->getTeamByColor($color);
     }
 
     /** Gets the arena a player is in
+     *
      * @param Player $player
+     *
      * @return Arena | null
      */
     public static function getArenaOfPlayer(Player $player) : ?Arena{
-        foreach(self::getGames() as $game){
-            #if (!self::isPlaying($player, $game)) continue;
-            foreach($game->getArenas() as $arena){
-                if($arena->inArena($player)) return $arena;
-            }
+        foreach(self::$game->getArenas() as $arena){
+            if($arena->inArena($player)) return $arena;
         }
+
         return null;
     }
 
     /**
      * @param Player      $gamer
      * @param null|Plugin $game if null, it will check for any game
+     *
      * @return bool
      */
     public static function isPlaying(Player $gamer, ?Plugin $game = null){
         return /*!is_null(self::getTeamOfPlayer($gamer)) && */
-            !is_null($arena = self::getArenaByLevel($game, $gamer->getLevel())) && $arena->inArena($gamer);
+            !is_null($arena = self::getArenaByLevel($gamer->getLevel())) && $arena->inArena($gamer);
     }
 
     /**
      * Register a plugin as a game
+     *
      * @param Plugin|Game $game
+     *
      * @throws \ReflectionException
      */
     public static function registerGame(Game $game){
-        //game command
-        if($game->getServer()->getCommandMap()->register("gameapi", new GamesCommand()))
-            $game->getServer()->getLogger()->notice('Registered /games command');
-        if($game->getServer()->getCommandMap()->register("gameapi", new GameStatusCommand()))
-            $game->getServer()->getLogger()->notice('Registered /gamestatus command');
+        if(self::$game instanceof Game){
+            throw new RuntimeException("Tried to register " . $game->getName() . " while " . self::$game->getName() . " was still registered!");
+        }
         //Generic handler for the DefaultSettings
         if(!DefaultSettingsListener::isRegistered())
             DefaultSettingsListener::register($game);
@@ -225,96 +208,68 @@ class API{
             self::$generator = new GeneratorGameVoid();
         }catch(\InvalidArgumentException $e){
         };
-        self::$games[$game->getName()] = $game;
-        $ev = new RegisterGameEvent($game);
-        $ev->call();
+        self::$game = $game;
     }
 
-    /**
-     * @return Game[]
-     */
-    public static function getGames(){
-        return self::$games;
-    }
-
-    /**
-     * @param string $name
-     * @return null|Game
-     */
-    public static function getGame(string $name){
-        return self::$games[$name] ?? null;
-    }
-
-    /**
-     * Maybe avoid using this? Just use @param Plugin|Game $game
-     * @return Arena[]
-     * @see Game::getArenas()?
-     * Returns all arenas of a Game
-     * @deprecated
-     */
-    public static function getArenas(Plugin $game){
-        return $game->getArenas();
+    public static function getGame(){
+        return self::$game;
     }
 
     /**
      * @param null|Level $level
+     *
      * @return bool
      */
     public static function isArena(?Level $level){
         if(is_null($level)) return false;
-        return self::getArenaByLevel(null, $level) instanceof Arena;
+
+        return self::getArenaByLevel($level) instanceof Arena;
     }
 
     /**
-     * @param null|Plugin|Game $game
-     * @param null|Level       $level
-     * @return bool
-     */
-    public static function isArenaOf(?Plugin $game, ?Level $level){
-        if(is_null($level)) return false;
-        return ($arena = self::getArenaByLevel($game, $level)) instanceof Arena && $arena->getOwningGame() === $game;
-    }
-
-    /**
-     * @param Plugin|Game $game
      * @param Level       $level
+     *
      * @return Arena|null
      */
-    public static function getArenaByLevel(?Plugin $game, Level $level) : ?Arena{
-        if(is_null($game))
-            foreach(API::getGames() as $game)//Else all arenas check
-                foreach($game->getArenas() as $arena){
-                    if($arena->getLevel()->getName() === $level->getName()) return $arena;
-                }
-        foreach($game->getArenas() as $arena){
-            if($arena->getLevel()->getName() === $level->getName()) return $arena;
+    public static function getArenaByLevel(Level $level) : ?Arena{
+        foreach(self::$game->getArenas() as $arena){
+            if($arena->getLevel()->getName() === $level->getName()){
+                return $arena;
+            }
         }
+
         return null;
     }
 
     /**
      * @param Plugin|Game $game
      * @param string      $levelname
+     *
      * @return Arena|null
      */
     public static function getArenaByLevelName(?Plugin $game, string $levelname) : ?Arena{
         $level = Server::getInstance()->getLevelByName($levelname);
         if(is_null($level)) return null;
-        return self::getArenaByLevel($game, $level);
+
+        return self::getArenaByLevel($level);
     }
 
     /**
      * @param string $color a TextFormat color constant
+     *
      * @return Color
      */
     public static function colorFromTextFormat($color) : Color{
         [$r, $g, $b] = str_split(ltrim(str_replace('>', '', str_replace('<span style=color:#', '', TextFormat::toHTML($color))), '#'));
+
         return new Color(...array_map('hexdec', [$r . $r, $g . $g, $b . $b]));
     }
 
     /**
      * Returns a matching meta value for a TextFormat color constant
+     *
      * @param string $color a TextFormat constant
+     *
      * @return int Meta value, returns -1 if failed
      */
     public static function getMetaByColor(string $color){
@@ -356,7 +311,9 @@ class API{
 
     /**
      * Returns a matching TextFormat color constant from meta values
+     *
      * @param int $meta
+     *
      * @return string $color a TextFormat constant
      */
     public static function getColorByMeta(int $meta){
@@ -401,27 +358,18 @@ class API{
         }
         $tag->setInt("customColor", self::toRGB($color));
         $item->setCompoundTag($tag);
+
         return $item;
     }
 
     /**
      * Returns an RGB 32-bit colour value.
+     *
      * @param Color $color
+     *
      * @return int
      */
     public static function toRGB(Color $color) : int{
         return ($color->getR() << 16) | ($color->getG() << 8) | $color->getB() & 0xffffff;
-    }
-
-    /**
-     * @param null|Level $level
-     * @return null|Game
-     */
-    public static function getGameByLevel(?Level $level) : ?Game{
-        if(is_null($level)) return null;
-        foreach(self::getGames() as $game){
-            if(API::isArenaOf($game, $level)) return $game;
-        }
-        return null;
     }
 }

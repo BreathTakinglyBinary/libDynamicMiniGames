@@ -1,5 +1,5 @@
 name: libDynamicMiniGames
-version: 4.0.7
+version: 5.0.0
 antigen: BreathTakinglyBinary\minigames
 api: [3.11]
 php: [7.2]

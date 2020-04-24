@@ -9,7 +9,6 @@ use pocketmine\plugin\PluginDescription;
 use pocketmine\plugin\PluginLoader;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
-use BreathTakinglyBinary\minigames\event\UpdateSignsEvent;
 use BreathTakinglyBinary\minigames\task\ArenaAsyncCopyTask;
 
 abstract class Game extends PluginBase{
@@ -50,12 +49,6 @@ abstract class Game extends PluginBase{
      */
     public function addArena(Arena $arena) : void{
         $this->arenas[$arena->getLevelName()] = $arena;
-        $ev = new UpdateSignsEvent($this, [$this->getServer()->getDefaultLevel()], $arena);
-        try{
-            $ev->call();
-        }catch(\ReflectionException $e){
-            Server::getInstance()->getLogger()->logException($e);
-        }
     }
 
     /**
@@ -75,29 +68,6 @@ abstract class Game extends PluginBase{
         $arena->stopArena();
         $this->removeArena($arena);
         return unlink($this->getDataFolder() . $arena->getLevelName() . ".json");
-    }
-
-    /**
-     * A method for setting up an arena.
-     * @param Player $player The player who will run the setup
-     */
-    public abstract function setupArena(Player $player) : void;
-
-    /**
-     * Stops the setup and teleports the player back to the default level
-     * @param Player $player
-     */
-    public function endSetupArena(Player $player) : void{
-        $arena = API::getArenaByLevel($this, $player->getLevel());
-        $player->getLevel()->save();
-        $player->getServer()->getAsyncPool()->submitTask(new ArenaAsyncCopyTask($player->getServer()->getDataPath(), $this->getDataFolder(), $player->getLevel()->getFolderName(), $this->getName()));
-        $arena->getSettings()->save();
-        $arena->setState(Arena::IDLE);
-        $player->getInventory()->clearAll();
-        $player->setAllowFlight(false);
-        $player->setFlying(false);
-        $player->setGamemode($player->getServer()->getDefaultGamemode());
-        $player->teleport($player->getServer()->getDefaultLevel()->getSpawnLocation());
     }
 
     /**
@@ -146,7 +116,7 @@ abstract class Game extends PluginBase{
 
     public function onDisable(){
         try{
-            API::stop($this);
+            API::stop();
         }catch(\ReflectionException $e){
         }
     }

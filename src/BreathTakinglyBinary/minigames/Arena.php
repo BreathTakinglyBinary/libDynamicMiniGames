@@ -9,13 +9,11 @@ use pocketmine\level\Level;
 use pocketmine\level\Position;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\Player;
-use pocketmine\scheduler\Task;
 use pocketmine\scheduler\TaskHandler;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 use RuntimeException;
 use BreathTakinglyBinary\DynamicBossBar\DiverseBossBar;
-use BreathTakinglyBinary\minigames\event\UpdateSignsEvent;
 use BreathTakinglyBinary\minigames\event\WinEvent;
 use BreathTakinglyBinary\minigames\gamerule\BoolGameRule;
 use BreathTakinglyBinary\minigames\gamerule\GameRuleList;
@@ -202,7 +200,6 @@ class Arena{
         }
         $team->addPlayer($player);
         if($this->getState() === self::WAITING || $this->getState() === self::STARTING || $this->getState() === self::IDLE){
-            var_dump(__FILE__ . __LINE__, (string) $this->getLevel()->getSafeSpawn());
             $player->teleport(Position::fromObject($this->getLevel()->getSafeSpawn($this->getLevel()->getSpawnLocation()), $this->getLevel()));//TODO check if ->add(0, 1)
             Server::getInstance()->getLogger()->notice($player->getName() . ' added to ' . $teamname);
             $gamename = $this->owningGame->getPrefix();
@@ -342,12 +339,6 @@ class Arena{
      */
     public function setState(int $state){
         $this->state = $state;
-        $ev = new UpdateSignsEvent($this->getOwningGame(), [$this->getOwningGame()->getServer()->getDefaultLevel()], $this);
-        try{
-            $ev->call();
-        }catch(\ReflectionException $e){
-            Server::getInstance()->getLogger()->logException($e);
-        }
     }
 
     /**
@@ -386,17 +377,17 @@ class Arena{
      */
     public function removePlayer(Player $player){
         $team = $this->getTeamByPlayer($player);
-        var_dump($team);
         if($team instanceof Team){
             $team->removePlayer($player);
         }
-        $player->setSpawn(Server::getInstance()->getDefaultLevel()->getSafeSpawn());
-        Server::getInstance()->getLogger()->notice($player->getName() . ' removed');
+        $server = Server::getInstance();
+        $player->setSpawn($server->getDefaultLevel()->getSafeSpawn());
+        $server->getLogger()->notice($player->getName() . ' removed');
         if($player->isOnline()){
             if(isset($this->bossbar)) $this->bossbar->removePlayer($player);
             $this->resetPlayer($player);
-            $player->setGamemode(Server::getInstance()->getDefaultGamemode());
-            $player->teleport(Server::getInstance()->getDefaultLevel()->getSafeSpawn());
+            $player->setGamemode($server->getDefaultGamemode());
+            $player->teleport($server->getDefaultLevel()->getSafeSpawn());
             $player->sendSettings();
         }
         $aliveTeams = array_filter($this->getTeams(), function(Team $team) : bool{

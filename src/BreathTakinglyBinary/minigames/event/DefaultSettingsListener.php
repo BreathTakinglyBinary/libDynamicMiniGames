@@ -63,7 +63,7 @@ class DefaultSettingsListener implements Listener{
     public function noBuild(BlockPlaceEvent $e){
         if(!$e->getBlock()->isValid() || is_null($level = $e->getBlock()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -80,7 +80,7 @@ class DefaultSettingsListener implements Listener{
     public function noBreakAndNoBlockDrops(BlockBreakEvent $e){
         if(!$e->getBlock()->isValid() || is_null($level = $e->getBlock()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -98,7 +98,7 @@ class DefaultSettingsListener implements Listener{
     public function noBedEnter(PlayerBedEnterEvent $e){
         if(!$e->getBed()->isValid() || is_null($level = $e->getBed()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -114,7 +114,7 @@ class DefaultSettingsListener implements Listener{
     public function noBedLeave(PlayerBedLeaveEvent $e){
         if(!$e->getBed()->isValid() || is_null($level = $e->getBed()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -130,7 +130,7 @@ class DefaultSettingsListener implements Listener{
     public function noWalkStart(PlayerMoveEvent $e){
         if(!$e->getFrom()->isValid() || is_null($level = $e->getFrom()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::WAITING && $arena->getState() !== Arena::STARTING){
             return;
@@ -146,7 +146,7 @@ class DefaultSettingsListener implements Listener{
     public function noPickup(InventoryPickupItemEvent $e){
         if(!$e->getItem()->isValid() || is_null($level = $e->getItem()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -162,7 +162,7 @@ class DefaultSettingsListener implements Listener{
     public function noDropItems(PlayerDropItemEvent $e){
         if(!$e->getPlayer()->isValid() || is_null($level = $e->getPlayer()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -179,7 +179,7 @@ class DefaultSettingsListener implements Listener{
         if(!$e->getTransaction()->getSource()->isValid() || is_null($level = $e->getTransaction()->getSource()->getLevel())) return;
         if(!$e->getTransaction()->getSource() instanceof Player) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -202,7 +202,7 @@ class DefaultSettingsListener implements Listener{
     public function noEntityDrops(EntityDeathEvent $e){
         if(!$e->getEntity()->isValid() || is_null($level = $e->getEntity()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -218,7 +218,7 @@ class DefaultSettingsListener implements Listener{
     public function keepClearInventory(PlayerDeathEvent $e){
         if(!$e->getPlayer()->isValid() || is_null($level = $e->getPlayer()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -239,7 +239,7 @@ class DefaultSettingsListener implements Listener{
     public function noArrowPickup(InventoryPickupArrowEvent $e){
         if(!$e->getArrow()->isValid() || is_null($level = $e->getArrow()->getLevel())) return;
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
@@ -259,7 +259,7 @@ class DefaultSettingsListener implements Listener{
         if(!$e->getEntity()->isValid()) return;
         $level = $e->getEntity()->getLevel();
         if(!API::isArena($level)) return;
-        $settings = ($arena = API::getArenaByLevel(null, $level))->getSettings();
+        $settings = ($arena = API::getArenaByLevel($level))->getSettings();
         if($arena->getState() === Arena::SETUP) return;
         if($arena->getState() !== Arena::INGAME){
             $e->setCancelled();
